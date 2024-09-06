@@ -83,7 +83,10 @@
             background-color: #113d6c;
             color: white;
         }
-        .highlight {
+        .highlight-business-partner {
+            background-color: #FFDBBB;
+        }
+        .highlight-city {
             background-color: lightgreen;
         }
         .spinner {
@@ -224,7 +227,8 @@
                     const businessPartnerCell = row.insertCell();
                     const businessPartnerName = item.BusinessPartnerName;
                     businessPartnerCell.textContent = businessPartnerName;
-                    row.insertCell().textContent = item.city;
+                    const cityCell = row.insertCell();
+                    cityCell.textContent = item.city;
                     row.insertCell().textContent = item.EMailAddress;
                     row.insertCell().textContent = item.tel_number;
                     row.insertCell().textContent = item.Street;
@@ -235,9 +239,14 @@
                     const normalizedBusinessPartnerName = businessPartnerName.trim().toLowerCase();
                     const normalizedCity = item.city.trim().toLowerCase();
 
-                    if (normalizedBusinessPartnerName === bpName && normalizedCity === city) {
-                        // Highlight cell if both BusinessPartnerName and City match
-                        businessPartnerCell.classList.add('highlight');
+                    if (normalizedBusinessPartnerName === bpName) {
+                        // Highlight business partner name cell if it matches
+                        businessPartnerCell.classList.add('highlight-business-partner');
+                    }
+
+                    if (normalizedCity === city) {
+                        // Highlight city cell if it matches
+                        cityCell.classList.add('highlight-city');
                     }
 
                     // Make business partner name clickable
