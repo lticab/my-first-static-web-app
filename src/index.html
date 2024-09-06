@@ -1,17 +1,216 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-  <title>Vanilla JavaScript App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BP Creation Fn</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f4f4f4;
+        }
+        .header {
+            background-color: #113d6c;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header img {
+            width: 200px; /* Set logo width */
+            height: auto; /* Maintain aspect ratio */
+        }
+        .header .company-name {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .main-content {
+            padding: 20px;
+            margin: 10px 10px 10px 10px;
+            max-width: auto;
+        }
+        .form-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+			width:800px;
+        }
+        .form-container h2 {
+            margin-top: 0;
+        }
+        .form-container label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+        .form-container input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .form-container button {
+            background-color: #113d6c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .form-container button:hover {
+            background-color: #0d2a47;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #113d6c;
+            color: white;
+			
+        }
+        /* Spinner styles */
+        .spinner {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-message {
+            text-align: center;
+            margin: 20px;
+        }
+        /* Highlight style for exact match */
+        .highlight {
+            background-color: lightgreen;
+        }
+    </style>
 </head>
-
 <body>
-  <main>
-    <h1>Vanilla JavaScript App</h1>
-  </main>
-</body>
+    <div class="header">
+        <img src="https://www.sea-lead.com/wp-content/uploads/2022/12/SeaLead-logo_white-1024x293.png?text=Logo" alt="Company Logo">
+        
+    </div>
 
+    <div class="main-content">
+        <h1>Business Partner Creation</h1>
+        
+        <div class="form-container">
+            <!--<h2>Search Form</h2>-->
+            <form id="bpForm">
+                <label for="bpName">Business Partner Name:</label>
+                <input type="text" id="bpName" name="bpName" required>
+                
+                <label for="city">City:</label>
+                <input type="text" id="city" name="city" required>
+                
+                <button type="submit" id="submitBtn">Submit</button>
+            </form>
+        </div>
+
+        <div id="loadingContainer" style="display: none;">
+            <div class="spinner"></div>
+            <div class="loading-message">Fetching data... This may take up to a minute.</div>
+        </div>
+		<br>
+        <h2>Results</h2>
+        <table id="resultsTable">
+            <thead>
+                <tr>
+					<th>Score</th>
+                    <th>BP</th>
+                    <th>Business Partner Name</th>
+                    <th>City</th>
+                    <th>Email</th>
+                    <th>Telephone</th>
+                    <th>Street</th>
+                    <th>Postal Code</th>
+                    <th>ResultType</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Results will be injected here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.getElementById('bpForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const bpName = document.getElementById('bpName').value.trim().toLowerCase();
+            const city = document.getElementById('city').value.trim().toLowerCase();
+
+            // Show loading spinner and message
+            document.getElementById('loadingContainer').style.display = 'block';
+            // Disable submit button
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+
+            // Clear previous results
+            const tableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+
+            try {
+                const response = await fetch(`https://azurefn-pyfuzzy.azurewebsites.net/api/bp-action?name=${encodeURIComponent(bpName)}`);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const data = await response.json();
+
+                data.forEach(item => {
+                    const row = tableBody.insertRow();
+					row.insertCell().textContent = item.Score;
+                    const businessPartnerCell = row.insertCell();
+					businessPartnerCell.textContent = item.BusinessPartner;
+                    row.insertCell().textContent = item.BusinessPartnerName;
+                    row.insertCell().textContent = item.city;
+                    row.insertCell().textContent = item.EMailAddress;
+                    row.insertCell().textContent = item.tel_number;
+                    row.insertCell().textContent = item.Street;
+                    row.insertCell().textContent = item.PostalCode;
+                    row.insertCell().textContent = item.ResultType;
+
+                    // Normalize and compare values ignoring case and leading/trailing spaces
+                    const normalizedBusinessPartnerName = item.BusinessPartnerName.trim().toLowerCase();
+                    const normalizedCity = item.city.trim().toLowerCase();
+
+                    if (normalizedBusinessPartnerName === bpName && normalizedCity === city) {
+                        // Highlight cell if both BusinessPartnerName and City match
+                        businessPartnerCell.classList.add('highlight');
+                    }
+                });
+            } catch (error) {
+                console.error('Error:', error);
+                alert('There was an error fetching the data. Please try again.');
+            } finally {
+                // Hide loading spinner and message
+                document.getElementById('loadingContainer').style.display = 'none';
+                // Re-enable submit button
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
 </html>
