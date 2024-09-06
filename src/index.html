@@ -154,16 +154,20 @@
         <h1>Business Partner Creation</h1>
         
         <div class="form-container">
-            <form id="bpForm">
+		<form id="bpForm">
                 <label for="bpName">Business Partner Name:</label>
                 <input type="text" id="bpName" name="bpName" required>
                 
                 <label for="city">City:</label>
                 <input type="text" id="city" name="city" required>
                 
+				<label for="code">Code:</label>
+        		<input type="text" id="code" name="code" required>
+
                 <button type="submit" id="submitBtn">Submit</button>
             </form>
-        </div>
+	</div>
+
 
         <div id="loadingContainer" style="display: none;">
             <div class="spinner"></div>
@@ -200,72 +204,91 @@
 
     <script>
         document.getElementById('bpForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const bpName = document.getElementById('bpName').value.trim().toLowerCase();
-            const city = document.getElementById('city').value.trim().toLowerCase();
+    event.preventDefault();
+    const bpName = document.getElementById('bpName').value.trim().toLowerCase();
+    const city = document.getElementById('city').value.trim().toLowerCase();
+    const code = document.getElementById('code').value;
 
-            // Show loading spinner and message
-            document.getElementById('loadingContainer').style.display = 'block';
-            // Disable submit button
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
+    // Show loading spinner and message
+    document.getElementById('loadingContainer').style.display = 'block';
+    // Disable submit button
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
 
-            // Clear previous results
-            const tableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
-            tableBody.innerHTML = '';
+    // Clear previous results
+    const tableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
+    tableBody.innerHTML = '';
 
-            try {
-                const response = await fetch(`https://azurefn-pyfuzzy.azurewebsites.net/api/bp-action?name=${encodeURIComponent(bpName)}`);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                const data = await response.json();
+    try {
+        // Check the code validity
+        const codeResponse = await fetch(`https://functionfuzzysearch.azurewebsites.net/api/CheckCode?name=${encodeURIComponent(code)}`);
+        if (!codeResponse.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const codeResult = await codeResponse.text();
+        
+        if (codeResult !== 'Match') {
+            // Hide loading spinner and message
+            document.getElementById('loadingContainer').style.display = 'none';
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            alert('Invalid Code');
+            return;
+        }
 
-                data.forEach(item => {
-                    const row = tableBody.insertRow();
-                    row.insertCell().textContent = item.Score;
-                    const businessPartnerCell = row.insertCell();
-                    const businessPartnerName = item.BusinessPartnerName;
-                    businessPartnerCell.textContent = businessPartnerName;
-                    const cityCell = row.insertCell();
-                    cityCell.textContent = item.city;
-                    row.insertCell().textContent = item.EMailAddress;
-                    row.insertCell().textContent = item.tel_number;
-                    row.insertCell().textContent = item.Street;
-                    row.insertCell().textContent = item.PostalCode;
-                    row.insertCell().textContent = item.ResultType;
+        // Proceed with the main request if code is valid
+        const response = await fetch(`https://azurefn-pyfuzzy.azurewebsites.net/api/bp-action?name=${encodeURIComponent(bpName)}`);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
 
-                    // Normalize and compare values ignoring case and leading/trailing spaces
-                    const normalizedBusinessPartnerName = businessPartnerName.trim().toLowerCase();
-                    const normalizedCity = item.city.trim().toLowerCase();
+        data.forEach(item => {
+            const row = tableBody.insertRow();
+            row.insertCell().textContent = item.Score;
+            const businessPartnerCell = row.insertCell();
+            const businessPartnerName = item.BusinessPartnerName;
+            businessPartnerCell.textContent = businessPartnerName;
+            const cityCell = row.insertCell();
+            cityCell.textContent = item.city;
+            row.insertCell().textContent = item.EMailAddress;
+            row.insertCell().textContent = item.tel_number;
+            row.insertCell().textContent = item.Street;
+            row.insertCell().textContent = item.PostalCode;
+            row.insertCell().textContent = item.ResultType;
 
-                    if (normalizedBusinessPartnerName === bpName) {
-                        // Highlight business partner name cell if it matches
-                        businessPartnerCell.classList.add('highlight-business-partner');
-                    }
+            // Normalize and compare values ignoring case and leading/trailing spaces
+            const normalizedBusinessPartnerName = businessPartnerName.trim().toLowerCase();
+            const normalizedCity = item.city.trim().toLowerCase();
 
-                    if (normalizedCity === city) {
-                        // Highlight city cell if it matches
-                        cityCell.classList.add('highlight-city');
-                    }
-
-                    // Make business partner name clickable
-                    businessPartnerCell.classList.add('pointer');
-                    businessPartnerCell.addEventListener('click', function() {
-                        document.getElementById('modalText').textContent = `BP Code: ${item.BusinessPartner}`;
-                        document.getElementById('bpModal').style.display = 'flex';
-                    });
-                });
-            } catch (error) {
-                console.error('Error:', error);
-                alert('There was an error fetching the data. Please try again.');
-            } finally {
-                // Hide loading spinner and message
-                document.getElementById('loadingContainer').style.display = 'none';
-                // Re-enable submit button
-                submitBtn.disabled = false;
+            if (normalizedBusinessPartnerName === bpName) {
+                // Highlight business partner name cell if it matches
+                businessPartnerCell.classList.add('highlight-business-partner');
             }
+
+            if (normalizedCity === city) {
+                // Highlight city cell if it matches
+                cityCell.classList.add('highlight-city');
+            }
+
+            // Make business partner name clickable
+            businessPartnerCell.classList.add('pointer');
+            businessPartnerCell.addEventListener('click', function() {
+                document.getElementById('modalText').textContent = `BP Code: ${item.BusinessPartner}`;
+                document.getElementById('bpModal').style.display = 'flex';
+            });
         });
+    } catch (error) {
+        console.error('Error:', error);
+        alert('There was an error fetching the data. Please try again.');
+    } finally {
+        // Hide loading spinner and message
+        document.getElementById('loadingContainer').style.display = 'none';
+        // Re-enable submit button
+        submitBtn.disabled = false;
+    }
+});
+
 
         // Close modal
         const modal = document.getElementById('bpModal');
